@@ -207,7 +207,7 @@ namespace Helsenorge.Registries
 		[ExcludeFromCodeCoverage] // requires wire communication
 		internal virtual Task<CPAService.CpaXmlDetails> FindAgreementById(ILogger logger, Guid id)
 			=> Invoke(logger, x => x.GetCpaXmlAsync(id), "GetCpaXmlAsync");
-
+		
 		/// <summary>
 		/// Finds the counterparty between us and some other communication party
 		/// </summary>
@@ -228,7 +228,7 @@ namespace Helsenorge.Registries
 		/// <returns></returns>
 		public async Task<CollaborationProtocolProfile> FindAgreementForCounterpartyAsync(ILogger logger, int counterpartyHerId, bool forceUpdate)
 		{
-			logger.LogDebug($"FindAgreementForCounterpartyAsync {counterpartyHerId}");
+			logger.LogDebug($"Start-FindAgreementForCounterpartyAsync {counterpartyHerId}");
 
 			var key = $"CPA_FindAgreementForCounterpartyAsync_{_settings.MyHerId}_{counterpartyHerId}";
 			var result = forceUpdate ? null : await CacheExtensions.ReadValueFromCache<CollaborationProtocolProfile>(logger, _cache, key).ConfigureAwait(false);
@@ -249,8 +249,10 @@ namespace Helsenorge.Registries
 
 			try
 			{
+                logger.LogDebug($"StartServiceCall-FindAgreementForCounterparty {counterpartyHerId}");
 				details = await FindAgreementForCounterparty(logger, counterpartyHerId).ConfigureAwait(false);
-			}
+                logger.LogDebug($"EndServiceCall-FindAgreementForCounterparty {counterpartyHerId}");
+            }
 			catch (FaultException ex)
 			{
 				// if there are error getting a proper CPA, we fallback to getting CPP.
@@ -258,19 +260,22 @@ namespace Helsenorge.Registries
 				return await FindProtocolForCounterpartyAsync(logger, counterpartyHerId);
 			}
 
-			if (string.IsNullOrEmpty(details?.CollaborationProtocolAgreementXml)) return null;
-			var doc = XDocument.Parse(details.CollaborationProtocolAgreementXml);
-			if (doc.Root == null) return null;
+            if (string.IsNullOrEmpty(details?.CollaborationProtocolAgreementXml)) return null;
+            var doc = XDocument.Parse(details.CollaborationProtocolAgreementXml);
+            if (doc.Root == null) return null;
 
-			var node = (from x in doc.Root.Elements(_ns + "PartyInfo").Elements(_ns + "PartyId")
-						where x.Value != _settings.MyHerId.ToString()
-						select x.Parent).First();
+            var node = (from x in doc.Root.Elements(_ns + "PartyInfo").Elements(_ns + "PartyId")
+                        where x.Value != _settings.MyHerId.ToString()
+                        select x.Parent).First();
 
-			result = MapFrompartyInfo(node);
-			result.CpaId = Guid.Parse(doc.Root.Attribute(_ns + "cpaid").Value);
-			
+            result = MapFrompartyInfo(node);
+            result.CpaId = Guid.Parse(doc.Root.Attribute(_ns + "cpaid").Value);
+            
 			await CacheExtensions.WriteValueToCache(logger, _cache, key, result, _settings.CachingInterval).ConfigureAwait(false);
-			return result;
+
+            logger.LogDebug($"End-FindAgreementForCounterpartyAsync {counterpartyHerId}");
+
+            return result;
 		}
 		
 		private CollaborationProtocolProfile CreateDummyCollaborationProtocolProfile(int herId, Abstractions.CertificateDetails encryptionCertificate, Abstractions.CertificateDetails signatureCertificate)
