@@ -59,7 +59,7 @@ namespace Helsenorge.Messaging
 			CollaborationProtocolRegistry = collaborationProtocolRegistry;
 			AddressRegistry = addressRegistry;
 
-			DefaultCertificateValidator = new CertificateValidator(settings.UseOnlineRevocationCheck);
+			DefaultCertificateValidator = new CertificateValidator();
 			DefaultMessageProtection = new SignThenEncryptMessageProtection();
 			ServiceBus = new ServiceBusCore(this);
 
