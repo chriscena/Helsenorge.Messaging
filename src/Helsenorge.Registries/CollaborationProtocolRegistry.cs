@@ -204,7 +204,7 @@ namespace Helsenorge.Registries
 		/// <returns></returns>
 		public async Task<CollaborationProtocolProfile> FindAgreementForCounterpartyAsync(ILogger logger, int counterpartyHerId)
 		{
-			logger.LogDebug($"FindAgreementForCounterpartyAsync {counterpartyHerId}");
+			logger.LogDebug($"Start-FindAgreementForCounterpartyAsync {counterpartyHerId}");
 
 			var key = $"CPA_FindAgreementForCounterpartyAsync_{_settings.MyHerId}_{counterpartyHerId}";
 			var result = await CacheExtensions.ReadValueFromCache<CollaborationProtocolProfile>(logger, _cache, key).ConfigureAwait(false);
