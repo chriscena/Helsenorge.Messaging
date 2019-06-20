@@ -7,7 +7,7 @@ namespace Helsenorge.Messaging.Tests.ServiceBus.Senders
     [TestClass]
     public class AsynchronousSendTestsWithoutCpp : BaseTest
     {
-	    private const int CommunicationPartyWithoutCppHerId = 94867;
+        private const int CommunicationPartyWithoutCppHerId = 94867;
 
         [TestInitialize]
         public override void Setup()
@@ -23,12 +23,11 @@ namespace Helsenorge.Messaging.Tests.ServiceBus.Senders
                 Payload = GenericMessage,
                 MessageFunction = "DIALOG_INNBYGGER_EKONTAKT",
                 MessageId = Guid.NewGuid().ToString("D"),
-                ScheduledSendTimeUtc = DateTime.Now,
                 PersonalId = "12345"
             };
         }
 
-        [TestMethod]
+        [TestMethod, Ignore]
         public void Send_Asynchronous_CommunicationPartyWithoutCpp_OK()
         {
             var message = CreateMessageForCommunicationPartyWithoutCpp();

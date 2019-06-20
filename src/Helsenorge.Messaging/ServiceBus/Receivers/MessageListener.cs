@@ -144,6 +144,8 @@ namespace Helsenorge.Messaging.ServiceBus.Receivers
                     MessageId = message.MessageId,
                     CorrelationId = message.CorrelationId,
                     EnqueuedTimeUtc = message.EnqueuedTimeUtc,
+                    RenewLock = message.RenewLock,
+                    DeliveryCount = message.DeliveryCount
                 };
                 NotifyMessageProcessingStarted(incomingMessage);
                 Logger.LogStartReceive(QueueType, incomingMessage);
@@ -203,6 +205,21 @@ namespace Helsenorge.Messaging.ServiceBus.Receivers
                 Core.ReportErrorToExternalSender(Logger, EventIds.DataMismatch, message, "abuse:spoofing-attack", ex.Message, null, ex);
                 MessagingNotification.NotifyHandledException(message, ex);
             }
+            catch (PayloadDeserializationException ex) // from parsing to XML, reportable exception
+            {
+                Core.ReportErrorToExternalSender(Logger, EventIds.ApplicationReported, message, "transport:not-well-formed-xml", ex.Message, null, ex);
+                MessagingNotification.NotifyHandledException(message, ex);
+            }
+            catch (AggregateException ex) when (ex.InnerException is MessagingException && ((MessagingException)ex.InnerException).EventId.Id == EventIds.Send.Id)
+            {
+                Core.ReportErrorToExternalSender(Logger, EventIds.ApplicationReported, message, "transport:invalid-field-value", "Invalid value in field: 'ReplyTo'", null, ex);
+                MessagingNotification.NotifyHandledException(message, ex);
+            }
+            catch (UnsupportedMessageException ex)  // reportable error from message handler (application)
+            {
+                Core.ReportErrorToExternalSender(Logger, EventIds.ApplicationReported, message, "transport:unsupported-message", ex.Message, null, ex);
+                MessagingNotification.NotifyHandledException(message, ex);
+            }
             catch (Exception ex) // unknown error
             {
                 message.AddDetailsToException(ex);
@@ -233,6 +250,8 @@ namespace Helsenorge.Messaging.ServiceBus.Receivers
         {
             Guid id;
 
+            // if we receive an error message then CPA isn't needed because we're not decrypting the message and then the CPA info isn't needed
+            if (QueueType == QueueType.Error) return null;
             if (Guid.TryParse(message.CpaId, out id) && (id != Guid.Empty))
             {
                 return await Core.CollaborationProtocolRegistry.FindAgreementByIdAsync(Logger, id).ConfigureAwait(false);
@@ -298,10 +317,14 @@ namespace Helsenorge.Messaging.ServiceBus.Receivers
             switch (error)
             {
                 case CertificateErrors.None:
-                // no error
+                    // no error
+                    return;
                 case CertificateErrors.Missing:
                     // if the certificate is missing, it's because we don't know where it came from
                     // and have no idea where to send an error message
+                    Logger.LogWarning($"Certificate is missing for message. MessageFunction: {originalMessage.MessageFunction} " +
+                        $"FromHerId: {originalMessage.FromHerId} ToHerId: {originalMessage.ToHerId} CpaId: {originalMessage.CpaId} " +
+                        $"CorrelationId: {originalMessage.CorrelationId} Certificate thumbprint: {certificate?.Thumbprint}");
                     return;
                 case CertificateErrors.StartDate:
                     errorCode = "transport:expired-certificate";

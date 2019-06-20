@@ -137,6 +137,8 @@ namespace Helsenorge.Messaging.Http
             get { throw new NotImplementedException(); }
         }
 
+        public int DeliveryCount => throw new NotImplementedException();
+
         public void Complete()
         {
             
@@ -147,7 +149,12 @@ namespace Helsenorge.Messaging.Http
             return Task.CompletedTask;
         }
 
-        public IMessagingMessage Clone()
+        public void DeadLetter()
+        {
+            throw new NotImplementedException();
+        }
+
+        public IMessagingMessage Clone(bool includePayload = true)
         {
             return new IncomingHttpMessage { AMQPMessage = AMQPMessage };
             //throw new NotImplementedException();
@@ -182,6 +189,11 @@ namespace Helsenorge.Messaging.Http
         public void Dispose()
         {
             
+        }
+
+        public void RenewLock()
+        {
+            throw new NotImplementedException();
         }
     }
 

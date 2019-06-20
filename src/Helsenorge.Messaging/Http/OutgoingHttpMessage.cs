@@ -68,6 +68,8 @@ namespace Helsenorge.Messaging.Http
             }
         }
 
+        public int DeliveryCount => throw new NotImplementedException();
+
         public void Complete()
         {
             throw new NotImplementedException();
@@ -78,7 +80,12 @@ namespace Helsenorge.Messaging.Http
             throw new NotImplementedException();
         }
 
-        public IMessagingMessage Clone()
+        public void DeadLetter()
+        {
+            throw new NotImplementedException();
+        }
+
+        public IMessagingMessage Clone(bool includePayload = true)
         {
             throw new NotImplementedException();
         }
@@ -139,6 +146,10 @@ namespace Helsenorge.Messaging.Http
             );
         }
 
+        public void RenewLock()
+        {
+            throw new NotImplementedException();
+        }
     }
 
 }
