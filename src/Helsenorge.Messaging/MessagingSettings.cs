@@ -19,15 +19,15 @@ namespace Helsenorge.Messaging
         /// <summary>
         /// The certificate used for signing messages
         /// </summary>
-        public CertificateSettings SigningCertificate { get; set; }
+        public ICertificateSettings SigningCertificate { get; set; }
         /// <summary>
         /// The certificate used to decrypt messages
         /// </summary>
-        public CertificateSettings DecryptionCertificate { get; set; }
+        public ICertificateSettings DecryptionCertificate { get; set; }
         /// <summary>
         /// The old certificate used for decryption when we have moved over to a new one.
         /// </summary>
-        public CertificateSettings LegacyDecryptionCertificate { get; set; }
+        public ICertificateSettings LegacyDecryptionCertificate { get; set; }
         /// <summary>
         /// Indicates if we should ignore certificate errors when sending
         /// </summary>
@@ -109,15 +109,15 @@ namespace Helsenorge.Messaging
         /// <summary>
         /// The certificate used for signing messages
         /// </summary>
-        public CertificateSettings SigningCertificate => _settings.SigningCertificate;
+        public ICertificateSettings SigningCertificate => _settings.SigningCertificate;
         /// <summary>
         /// The certificate used to decrypt messages
         /// </summary>
-        public CertificateSettings DecryptionCertificate => _settings.DecryptionCertificate;
+        public ICertificateSettings DecryptionCertificate => _settings.DecryptionCertificate;
         /// <summary>
         /// The old certificate used for decryption when we have moved over to a new one.
         /// </summary>
-        public CertificateSettings LegacyDecryptionCertificate => _settings.LegacyDecryptionCertificate;
+        public ICertificateSettings LegacyDecryptionCertificate => _settings.LegacyDecryptionCertificate;
         
         internal ServiceBusSettings(MessagingSettings settings)
         {
@@ -237,10 +237,19 @@ namespace Helsenorge.Messaging
             if (ReadTimeout == TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(ReadTimeout));
         }
     }
-    /// <summary>
-    /// Represents information about a certificate and where to get it
-    /// </summary>
-    public class CertificateSettings
+
+	/// <summary>
+	/// Provides a certificate
+	/// </summary>
+	public interface ICertificateSettings
+	{
+		X509Certificate2 Certificate { get; }
+	}
+
+	/// <summary>
+	/// Represents information about a certificate and where to get it
+	/// </summary>
+	public class CertificateSettings : ICertificateSettings
     {
         X509Certificate2 _certificate;
 
